@@ -349,7 +349,7 @@ def main():
     # --- タブ1: プロット作成 ---
     with tab1:
         st.header("📝 プロット作成")
-        col1, col2 = st.columns()
+        col1, col2 = st.columns(2)
         with col1:
             st.subheader("基本設定")
             genres = ['ドラマ', 'コメディ', 'アクション', 'ロマンス', 'ホラー', 'SF', 'ファンタジー', 'ミステリー', '日常系', '2ch系']
@@ -367,6 +367,7 @@ def main():
             params = {'genre': selected_genre, 'title': title, 'format': format_type, 'protagonist': protagonist, 'worldview': worldview, 'theme': theme, 'existing_plot': existing_plot, 'mode': generation_mode}
             if generate_content(st.session_state.model, create_plot_prompt, params, "プロット"):
                 st.success("✅ プロット生成完了！"); st.rerun()
+
     # --- タブ2: 台本作成 ---
     with tab2:
         st.header("🎭 台本作成")
@@ -419,11 +420,11 @@ def main():
         else: # 海外の反応動画
             st.subheader("海外の反応動画 設定")
             theme_placeholder, theme_key, style_key, length_key, button_key = "例：日本の新幹線に対する海外の評価", "kaigai_theme", "kaigai_style", "kaigai_length", "kaigai_gen"
-            style_options = {'japan_praise': '🇯🇵 日本称賛系', 'technology': '🤖 技術系', 'moving': '💖 感動系', 'anti_china': '⚔️ 嫌中・比較系', 'food': '🍣 食文化・料理系', 'history': '🏯 歴史・伝統系', 'anime_manga': 'ანი메 アニメ・漫画系'}
+            style_options = {'japan_praise': '🇯🇵 日本称賛系', 'technology': '🤖 技術系', 'moving': '💖 感動系', 'anti_china': '⚔️ 嫌中・比較系', 'food': '🍣 食文化・料理系', 'history': '🏯 歴史・伝統系', 'anime_manga': 'ანიメ アニメ・漫画系'}
             prompt_func = create_kaigai_hanno_prompt
             content_type = "海外の反応動画台本"
 
-        col1, col2 = st.columns()
+        col1, col2 = st.columns(2)
         with col1:
             video_theme = st.text_input("動画テーマ", placeholder=theme_placeholder, key=theme_key)
             selected_style = st.selectbox("スタイル", options=list(style_options.keys()), format_func=lambda x: style_options[x], key=style_key)
@@ -441,7 +442,7 @@ def main():
     with tab5:
         st.header("🎨 マンガ・アニメネーム作成")
         story_summary = st.text_area("ストーリー概要", placeholder="ネーム化したいストーリーの概要（プロットやあらすじ）を入力...", height=200, key="story_summary_input")
-        col1, col2 = st.columns()
+        col1, col2 = st.columns(2)
         with col1: page_count = st.number_input("ページ数", min_value=1, max_value=200, value=20, key="page_count_input")
         with col2: name_format = st.selectbox("ネーム形式", ['manga', '4koma', 'storyboard', 'webtoon'], format_func=lambda x: {'manga': '📚 マンガネーム', '4koma': '📄 4コマネーム', 'storyboard': '🎬 アニメ絵コンテ', 'webtoon': '📱 ウェブトゥーン'}[x], key="name_format_select")
         if st.button("🎨 ネーム生成", type="primary", use_container_width=True, key="name_gen_button"):
@@ -456,7 +457,7 @@ def main():
         st.markdown("---")
         st.header("📄 生成結果")
         
-        b_col1, b_col2, _ = st.columns()
+        b_col1, b_col2, _ = st.columns([1, 1, 5])
         if b_col1.button("🔄 再生成", help="同じ条件で再生成"):
             if st.session_state.last_generation_params:
                 params = st.session_state.last_generation_params
@@ -490,12 +491,13 @@ def main():
         
         with st.expander("⭐ 生成結果の評価"):
             with st.form(key="feedback_form"):
-                st.selectbox("評価",, format_func=lambda x: "⭐" * x)
+                # ★★★ エラー箇所を修正 ★★★
+                st.selectbox("評価", [5, 4, 3, 2, 1], format_func=lambda x: "⭐" * x)
                 st.text_area("フィードバック（任意）", placeholder="改善点や良かった点など")
                 if st.form_submit_button("📝 評価を送信"): st.success("✅ 評価を保存しました！ご協力ありがとうございます。")
 
     st.markdown("---")
-    st.markdown("""<div style="text-align: center; padding: 2rem; color: #666;"><p><strong>Powered by:</strong> Google Gemini API | <strong>Version:</strong> 2.4.1</p></div>""", unsafe_allow_html=True)
+    st.markdown("""<div style="text-align: center; padding: 2rem; color: #666;"><p><strong>Powered by:</strong> Google Gemini API | <strong>Version:</strong> 2.4.2</p></div>""", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     initialize_session_state()
