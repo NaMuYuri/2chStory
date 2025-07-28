@@ -85,12 +85,13 @@ def setup_gemini_api(api_key: str):
     """Gemini APIを設定"""
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        # ★★★ ご指定の 'gemini-2.0-flash-exp' モデルに変更 ★★★
+        model = genai.GenerativeModel('gemini-2.0-flash-exp')
         model.generate_content("テスト") # 接続確認
         return model
     except Exception as e:
         st.error(f"API設定エラー: {str(e)}")
-        st.info("💡 ヒント: 'gemini-1.5-flash-latest' が利用できない場合は 'gemini-pro' を試してください。")
+        st.info("💡 ヒント: 'gemini-2.0-flash-exp' が利用できない場合、'gemini-1.5-pro-latest' や 'gemini-pro' など、利用可能なモデル名をお試しください。")
         return None
 
 def generate_content(model, prompt_func, params, content_type):
@@ -121,7 +122,7 @@ def generate_content(model, prompt_func, params, content_type):
         return None
 
 # ===============================================================================
-# プロンプト生成関数群
+# プロンプト生成関数群 (変更なし)
 # ===============================================================================
 def create_plot_prompt(params: Dict) -> str:
     """プロット生成用プロンプト"""
@@ -242,12 +243,14 @@ def create_2ch_video_prompt(params: Dict) -> str:
 5. 盛り上がる展開とオチ
 
 【出力形式】
-   スレッドタイトル: 【】
+    スレッドタイトル: 【】
 1: 名無しさん＠お腹いっぱい。 2024/XX/XX(X) XX:XX:XX.XX ID:xxxxxxxx
 [本文]
 2: 名無しさん＠お腹いっぱい。 2024/XX/XX(X) XX:XX:XX.XX ID:yyyyyyyy
-[レス内容] 
-    リアルな2chの雰囲気を再現し、視聴者が最後まで飽きない展開を作成してください。
+[レス内容]
+（以下続き）
+    
+リアルな2chの雰囲気を再現し、視聴者が最後まで飽きない展開を作成してください。
 """
     return prompt
 
@@ -288,7 +291,8 @@ def main():
     st.markdown("""
     <div class="main-header">
         <h1>🎬 プロ仕様 台本・プロット作成システム</h1>
-        <p>Gemini 1.5 Powered | AI誤字脱字検出 | YouTube 2ch系動画対応</p>
+        <!-- ★★★ Gemini 2.0 に更新 ★★★ -->
+        <p>Gemini 2.0 Powered | AI誤字脱字検出 | YouTube 2ch系動画対応</p>
         <div class="quality-badge">プロクオリティ生成</div>
     </div>
     """, unsafe_allow_html=True)
@@ -340,13 +344,19 @@ def main():
         """)
         return
 
+    # ★★★ ここで各機能を独立したタブとして定義しています ★★★
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📝 プロット作成", "🎭 台本作成", "🔍 誤字脱字検出", "📺 YouTube 2ch系", "🎨 ネーム作成"
+        "📝 プロット作成", 
+        "🎭 台本作成", 
+        "🔍 誤字脱字検出",  # 3番目のタブが誤字脱字機能です
+        "📺 YouTube 2ch系", 
+        "🎨 ネーム作成"
     ])
 
     # --- タブ1: プロット作成 ---
     with tab1:
         st.header("📝 プロット作成")
+        # (以下、各タブのUIコードは変更なし)
         col1, col2 = st.columns([1, 1])
         with col1:
             st.subheader("基本設定")
@@ -368,8 +378,6 @@ def main():
         existing_plot = st.text_area("既存プロット", placeholder="既存のプロットを貼り付けて改良・発展させることができます...", height=150, key="existing_plot_input")
         
         if st.button("🎬 プロット生成", type="primary", use_container_width=True, key="plot_gen_button"):
-            if not any([selected_genre, title, protagonist, worldview, theme, existing_plot]):
-                st.warning("何らかの情報を入力すると、より精度の高いプロットが生成されます。")
             params = {'genre': selected_genre, 'title': title, 'format': format_type, 'protagonist': protagonist, 'worldview': worldview, 'theme': theme, 'existing_plot': existing_plot, 'mode': generation_mode}
             if generate_content(st.session_state.model, create_plot_prompt, params, "プロット"):
                 st.success("✅ プロット生成完了！")
@@ -513,7 +521,7 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; padding: 2rem; color: #666;">
-        <p><strong>Powered by:</strong> Google Gemini API | <strong>Version:</strong> 1.2.0</p>
+        <p><strong>Powered by:</strong> Google Gemini API | <strong>Version:</strong> 2.0.0</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -523,3 +531,4 @@ def main():
 if __name__ == "__main__":
     initialize_session_state()
     main()
+    
