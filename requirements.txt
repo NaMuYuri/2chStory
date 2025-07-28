@@ -1,0 +1,5 @@
+streamlit
+google-generativeai
+pandas
+pyperclip
+# 他にも使用しているライブラリがあれば記載されます
