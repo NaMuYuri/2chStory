@@ -183,10 +183,8 @@ def create_error_check_prompt(params: Dict) -> str:
 プロの校正者として、読みやすさと正確性を両立した修正を行ってください。"""
     return prompt
 
-# ★★★ ここからYouTube動画台本用のプロンプト ★★★
-
 def create_2ch_video_prompt(params: Dict) -> str:
-    """2ch風動画用プロンプト（台本形式化、ナレーター指定、文字数増加に対応）"""
+    """2ch風動画用プロンプト"""
     style_settings = {
         'love-story': '恋愛関係の悩みや体験談', 'work-life': '職場での人間関係やトラブル',
         'school-life': '学校生活での出来事や人間関係', 'family': '家族関係の問題や体験談',
@@ -232,7 +230,7 @@ def create_2ch_video_prompt(params: Dict) -> str:
     return prompt
 
 def create_kaigai_hanno_prompt(params: Dict) -> str:
-    """海外の反応動画用のプロンプト（ナレーター指定、文字数増加に対応）"""
+    """海外の反応動画用のプロンプト"""
     style_details = {
         'japan_praise': "日本の文化、製品、おもてなし等の素晴らしさを称賛する内容", 'technology': "日本の先進的な技術や製品への驚きや評価",
         'moving': "日本の心温まる話や、海外での親切な日本人のエピソードなど感動的な内容", 'anti_china': "特定の国と比較し、日本の優位性や正当性を主張する内容",
@@ -264,7 +262,7 @@ def create_kaigai_hanno_prompt(params: Dict) -> str:
     return prompt
 
 def create_sukatto_prompt(params: Dict) -> str:
-    """スカッと系動画用のプロンプト（ナレーター指定、文字数増加に対応）"""
+    """スカッと系動画用のプロンプト"""
     style_details = {
         'revenge': "主人公が受けた理不尽な仕打ちに対し、周到な計画で見事に復讐を遂げる物語。", 'dqn_turn': "DQNやマナーの悪い人物に対し、主人公が機転や正論で鮮やかに論破・撃退する物語。",
         'karma': "悪事を働いていた人物が、自らの行いが原因で自滅し、悲惨な末路を迎える因果応報の物語。", 'workplace': "職場のパワハラ、セクハラ、いじめなどに対し、主人公が逆転する物語。",
@@ -292,7 +290,7 @@ def create_sukatto_prompt(params: Dict) -> str:
 5. **エピローグ（悪役の末路と主人公の未来）**: 悪役の悲惨な末路と、平穏を手に入れた主人公の様子を描く。
 
 【出力形式】
-- 登場人物の名前（例：主人公「ユイ」、悪役「アケミ」）を具体的に設定してください。
+- 登場人物の名前（例：主人公「ユイ」、悪役「アケミ」など）を具体的に設定してください。
 - ナレーター、登場人物のセリフ、ト書き（状況説明）を明確に分けて記述してください。
 最高のスカッと系台本を作成してください。"""
     return prompt
@@ -348,10 +346,10 @@ def main():
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["📝 プロット作成", "🎭 台本作成", "🔍 誤字脱字検出", "📺 YouTube動画台本", "🎨 ネーム作成"])
 
-    # --- 各タブのUI ---
+    # --- タブ1: プロット作成 ---
     with tab1:
         st.header("📝 プロット作成")
-        col1, col2 = st.columns([1, 1])
+        col1, col2 = st.columns()
         with col1:
             st.subheader("基本設定")
             genres = ['ドラマ', 'コメディ', 'アクション', 'ロマンス', 'ホラー', 'SF', 'ファンタジー', 'ミステリー', '日常系', '2ch系']
@@ -369,6 +367,7 @@ def main():
             params = {'genre': selected_genre, 'title': title, 'format': format_type, 'protagonist': protagonist, 'worldview': worldview, 'theme': theme, 'existing_plot': existing_plot, 'mode': generation_mode}
             if generate_content(st.session_state.model, create_plot_prompt, params, "プロット"):
                 st.success("✅ プロット生成完了！"); st.rerun()
+    # --- タブ2: 台本作成 ---
     with tab2:
         st.header("🎭 台本作成")
         plot_from_history = ""
@@ -382,6 +381,7 @@ def main():
                 params = {'plot': plot_input, 'format': script_format, 'mode': generation_mode}
                 if generate_content(st.session_state.model, create_script_prompt, params, "台本"):
                     st.success("✅ 台本生成完了！"); st.rerun()
+    # --- タブ3: 誤字脱字検出 ---
     with tab3:
         st.header("🔍 AI誤字脱字検出")
         text_to_check = st.text_area("チェック対象テキスト", placeholder="誤字脱字をチェックしたいテキストを入力してください...", height=250, key="text_to_check_input")
@@ -392,7 +392,7 @@ def main():
                 params = {'text': text_to_check, 'level': check_level}
                 if generate_content(st.session_state.model, create_error_check_prompt, params, "校正"):
                     st.success("✅ チェック完了！"); st.rerun()
-    
+    # --- タブ4: YouTube動画台本 ---
     with tab4:
         st.header("📺 YouTube動画台本 作成")
         video_type = st.selectbox("作成する動画の種類を選択してください", ["スカッと系動画", "2ch風動画", "海外の反応動画"], key="video_type_select")
@@ -423,7 +423,7 @@ def main():
             prompt_func = create_kaigai_hanno_prompt
             content_type = "海外の反応動画台本"
 
-        col1, col2 = st.columns([1, 1])
+        col1, col2 = st.columns()
         with col1:
             video_theme = st.text_input("動画テーマ", placeholder=theme_placeholder, key=theme_key)
             selected_style = st.selectbox("スタイル", options=list(style_options.keys()), format_func=lambda x: style_options[x], key=style_key)
@@ -437,11 +437,11 @@ def main():
                 params = {'theme': video_theme, 'style': selected_style, 'length': selected_length, 'narrator_style': narrator_style, 'mode': generation_mode}
                 if generate_content(st.session_state.model, prompt_func, params, content_type):
                     st.success(f"✅ {content_type} 生成完了！"); st.rerun()
-
+    # --- タブ5: ネーム作成 ---
     with tab5:
         st.header("🎨 マンガ・アニメネーム作成")
         story_summary = st.text_area("ストーリー概要", placeholder="ネーム化したいストーリーの概要（プロットやあらすじ）を入力...", height=200, key="story_summary_input")
-        col1, col2 = st.columns([1, 1])
+        col1, col2 = st.columns()
         with col1: page_count = st.number_input("ページ数", min_value=1, max_value=200, value=20, key="page_count_input")
         with col2: name_format = st.selectbox("ネーム形式", ['manga', '4koma', 'storyboard', 'webtoon'], format_func=lambda x: {'manga': '📚 マンガネーム', '4koma': '📄 4コマネーム', 'storyboard': '🎬 アニメ絵コンテ', 'webtoon': '📱 ウェブトゥーン'}[x], key="name_format_select")
         if st.button("🎨 ネーム生成", type="primary", use_container_width=True, key="name_gen_button"):
@@ -451,11 +451,12 @@ def main():
                 if generate_content(st.session_state.model, create_name_prompt, params, "ネーム"):
                     st.success("✅ ネーム生成完了！"); st.rerun()
 
+    # --- 生成結果の表示エリア ---
     if st.session_state.generated_content:
         st.markdown("---")
         st.header("📄 生成結果")
         
-        b_col1, b_col2, _ = st.columns([1, 1, 5])
+        b_col1, b_col2, _ = st.columns()
         if b_col1.button("🔄 再生成", help="同じ条件で再生成"):
             if st.session_state.last_generation_params:
                 params = st.session_state.last_generation_params
@@ -489,13 +490,13 @@ def main():
         
         with st.expander("⭐ 生成結果の評価"):
             with st.form(key="feedback_form"):
-                st.selectbox("評価", [5, 4, 3, 2, 1], format_func=lambda x: "⭐" * x)
+                st.selectbox("評価",, format_func=lambda x: "⭐" * x)
                 st.text_area("フィードバック（任意）", placeholder="改善点や良かった点など")
                 if st.form_submit_button("📝 評価を送信"): st.success("✅ 評価を保存しました！ご協力ありがとうございます。")
 
     st.markdown("---")
-    st.markdown("""<div style="text-align: center; padding: 2rem; color: #666;"><p><strong>Powered by:</strong> Google Gemini API | <strong>Version:</strong> 2.4.0</p></div>""", unsafe_allow_html=True)
+    st.markdown("""<div style="text-align: center; padding: 2rem; color: #666;"><p><strong>Powered by:</strong> Google Gemini API | <strong>Version:</strong> 2.4.1</p></div>""", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     initialize_session_state()
-    main()```
+    main()
