@@ -112,6 +112,39 @@ def generate_content(model, prompt_func, params, content_type):
 # ===============================================================================
 # プロンプト生成関数群
 # ===============================================================================
+def create_theme_generation_prompt(params: Dict) -> str:
+    """テーマ生成用のプロンプト"""
+    if params['generation_type'] == 'genre':
+        source_text = f"【ジャンル】: {params['genre']}"
+        instruction = "このジャンルに沿った、独創的で魅力的な物語や動画のテーマを考えてください。"
+    else:
+        source_text = f"【キーワード】: {params['keyword']}"
+        instruction = "このキーワードから発想を広げ、面白そうな物語や動画のテーマを考えてください。"
+
+    prompt = f"""
+あなたは一流のクリエイティブプロデューサーです。あなたの仕事は、まだ誰も見たことがないような、視聴者の心を掴む物語のアイデアを生み出すことです。
+{instruction}
+
+{source_text}
+
+以下の要件に従って、{params['num_ideas']}個のテーマ案を提案してください。
+
+【出力要件】
+- 各テーマは、キャッチーな「タイトル」と、2～3行の「概要」で構成してください。
+- 視聴者が「面白そう！」「続きが見たい！」と思うような、好奇心を刺激する内容にしてください。
+- ありきたりなアイデアではなく、少しひねりのある、独創的な切り口を重視してください。
+
+【出力形式】
+1. **タイトル**: （ここにタイトル）
+   **概要**: （ここに2～3行の概要）
+
+2. **タイトル**: （ここにタイトル）
+   **概要**: （ここに2～3行の概要）
+
+(以下、指定された数まで繰り返す)
+"""
+    return prompt
+
 def create_plot_prompt(params: Dict) -> str:
     """プロット生成用プロンプト"""
     mode_instructions = {
@@ -344,28 +377,59 @@ def main():
         st.error("🚫 サイドバーでAPIキーを設定してください")
         return
 
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📝 プロット作成", "🎭 台本作成", "🔍 誤字脱字検出", "📺 YouTube動画台本", "🎨 ネーム作成", "✍️ 推敲・二次チェック"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["💡 テーマ生成", "📝 プロット作成", "🎭 台本作成", "🔍 誤字脱字検出", "📺 YouTube動画台本", "🎨 ネーム作成", "✍️ 推敲・二次チェック"])
 
     with tab1:
+        st.header("💡 テーマ生成＆アイデア出し")
+        st.info("物語のテーマが思いつかない時に、AIがアイデア出しをお手伝いします。")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            generation_type = st.selectbox("生成方法を選択してください", ["ジャンルからアイデアを得る", "キーワードから発想を広げる"], key="theme_gen_type")
+        with col2:
+            num_ideas = st.slider("生成するアイデアの数", min_value=3, max_value=10, value=5, key="num_ideas_slider")
+        
+        if generation_type == "ジャンルからアイデアを得る":
+            genre_options = ["スカッと系", "2ch風", "海外の反応", "恋愛", "SF", "ファンタジー", "ホラー", "ミステリー", "コメディ", "日常系"]
+            selected_genre = st.selectbox("アイデアが欲しいジャンルを選択してください", genre_options, key="theme_genre_select")
+            keyword_input = ""
+        else: # キーワードから発想を広げる
+            keyword_input = st.text_input("アイデアを広げたいキーワードを入力してください", placeholder="例：タイムマシン、最後の夏休み、AIとの共存", key="theme_keyword_input")
+            selected_genre = ""
+            
+        if st.button("💡 アイデアを生成する", type="primary", use_container_width=True, key="theme_gen_button"):
+            if generation_type == "キーワードから発想を広げる" and not keyword_input.strip():
+                st.error("キーワードを入力してください。")
+            else:
+                params = {
+                    'generation_type': 'genre' if generation_type == "ジャンルからアイデアを得る" else 'keyword',
+                    'genre': selected_genre,
+                    'keyword': keyword_input,
+                    'num_ideas': num_ideas
+                }
+                if generate_content(st.session_state.model, create_theme_generation_prompt, params, "テーマ案"):
+                    st.success(f"✅ テーマ案を{num_ideas}個生成しました！"); st.rerun()
+
+    with tab2:
         st.header("📝 プロット作成")
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("基本設定")
             genres = ['ドラマ', 'コメディ', 'アクション', 'ロマンス', 'ホラー', 'SF', 'ファンタジー', 'ミステリー', '日常系', '2ch系', '異世界転生', 'サイバーパンク', '歴史・時代劇']
-            selected_genre = st.selectbox("ジャンル", genres, key="genre_select")
-            title = st.text_input("作品タイトル", placeholder="例：青春の記憶", key="title_input")
+            selected_genre = st.selectbox("ジャンル", genres, key="genre_select_plot")
+            title = st.text_input("作品タイトル", placeholder="例：青春の記憶", key="title_input_plot")
         with col2:
             st.subheader("詳細設定")
-            protagonist = st.text_area("主人公設定", placeholder="年齢、性格、職業、背景など...", height=100, key="protagonist_input")
-            worldview = st.text_area("世界観・設定", placeholder="時代、場所、社会情勢、特殊な設定など...", height=100, key="worldview_input")
+            protagonist = st.text_area("主人公設定", placeholder="年齢、性格、職業、背景など...", height=100, key="protagonist_input_plot")
+            worldview = st.text_area("世界観・設定", placeholder="時代、場所、社会情勢、特殊な設定など...", height=100, key="worldview_input_plot")
         st.subheader("既存プロット取り込み（オプション）")
-        existing_plot = st.text_area("既存プロット", placeholder="既存のプロットを貼り付けて改良・発展させることができます...", height=150, key="existing_plot_input")
+        existing_plot = st.text_area("既存プロット", placeholder="既存のプロットを貼り付けて改良・発展させることができます...", height=150, key="existing_plot_plot")
         if st.button("🎬 プロット生成", type="primary", use_container_width=True, key="plot_gen_button"):
             params = {'genre': selected_genre, 'title': title, 'protagonist': protagonist, 'worldview': worldview, 'existing_plot': existing_plot, 'mode': generation_mode}
             if generate_content(st.session_state.model, create_plot_prompt, params, "プロット"):
                 st.success("✅ プロット生成完了！"); st.rerun()
 
-    with tab2:
+    with tab3:
         st.header("🎭 台本作成")
         plot_from_history = ""
         plot_items = [item for item in st.session_state.generation_history if item['type'] == 'プロット']
@@ -379,7 +443,7 @@ def main():
                 if generate_content(st.session_state.model, create_script_prompt, params, "台本"):
                     st.success("✅ 台本生成完了！"); st.rerun()
 
-    with tab3:
+    with tab4:
         st.header("🔍 AI誤字脱字検出")
         text_to_check = st.text_area("チェック対象テキスト", placeholder="誤字脱字をチェックしたいテキストを入力してください...", height=250, key="text_to_check_input")
         check_level = st.selectbox("チェックレベル", ['basic', 'advanced', 'professional'], format_func=lambda x: {'basic': '基本チェック', 'advanced': '高度チェック', 'professional': 'プロフェッショナル'}[x], key="check_level_select")
@@ -390,7 +454,7 @@ def main():
                 if generate_content(st.session_state.model, create_error_check_prompt, params, "校正"):
                     st.success("✅ チェック完了！"); st.rerun()
     
-    with tab4:
+    with tab5:
         st.header("📺 YouTube動画台本 作成")
         video_type = st.selectbox("作成する動画の種類を選択してください", ["スカッと系動画", "2ch風動画", "海外の反応動画"], key="video_type_select")
         
@@ -449,7 +513,7 @@ def main():
                 if generate_content(st.session_state.model, base_prompt_func, params, f"{video_type}台本"):
                     st.success(f"✅ {video_type}台本 生成完了！"); st.rerun()
 
-    with tab5:
+    with tab6:
         st.header("🎨 マンガ・アニメネーム作成")
         story_summary = st.text_area("ストーリー概要", placeholder="ネーム化したいストーリーの概要（プロットやあらすじ）を入力...", height=200, key="story_summary_input")
         col1, col2 = st.columns(2)
@@ -462,7 +526,7 @@ def main():
                 if generate_content(st.session_state.model, create_name_prompt, params, "ネーム"):
                     st.success("✅ ネーム生成完了！"); st.rerun()
 
-    with tab6:
+    with tab7:
         st.header("✍️ 推敲・二次チェック")
         st.info("完成した台本やプロットを貼り付けて、プロの視点から改善案を得ましょう。")
         text_to_check_secondary = st.text_area("チェックしたい文章をここに貼り付けてください", height=300, key="secondary_check_input")
@@ -523,7 +587,7 @@ def main():
                 if st.form_submit_button("📝 評価を送信"): st.success("✅ 評価を保存しました！ご協力ありがとうございます。")
 
     st.markdown("---")
-    st.markdown("""<div style="text-align: center; padding: 2rem; color: #666;"><p><strong>Powered by:</strong> Google Gemini API | <strong>Version:</strong> 3.0.0</p></div>""", unsafe_allow_html=True)
+    st.markdown("""<div style="text-align: center; padding: 2rem; color: #666;"><p><strong>Powered by:</strong> Google Gemini API | <strong>Version:</strong> 3.1.0</p></div>""", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     initialize_session_state()
